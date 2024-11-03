@@ -56,8 +56,7 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern DMA_HandleTypeDef hdma_usart2_rx;
-extern DMA_HandleTypeDef hdma_usart2_tx;
+
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -185,7 +184,7 @@ void SysTick_Handler(void)
   /* USER CODE BEGIN SysTick_IRQn 0 */
 
   /* USER CODE END SysTick_IRQn 0 */
-  HAL_IncTick();
+
   /* USER CODE BEGIN SysTick_IRQn 1 */
 
   /* USER CODE END SysTick_IRQn 1 */
@@ -206,7 +205,7 @@ void DMA1_Channel6_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel6_IRQn 0 */
 
   /* USER CODE END DMA1_Channel6_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_rx);
+
   /* USER CODE BEGIN DMA1_Channel6_IRQn 1 */
 
   /* USER CODE END DMA1_Channel6_IRQn 1 */
@@ -218,9 +217,14 @@ void DMA1_Channel6_IRQHandler(void)
 void DMA1_Channel7_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Channel7_IRQn 0 */
-
+	/*  // x
+	if(LL_DMA_IsActiveFlag_TC7(DMA1) == SET) {
+	    LL_DMA_ClearFlag_TC7(DMA1);
+	    while(LL_USART_IsActiveFlag_TC(USART2) == RESET);
+	    LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_7);
+	}*/
   /* USER CODE END DMA1_Channel7_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_tx);
+
   /* USER CODE BEGIN DMA1_Channel7_IRQn 1 */
 
   /* USER CODE END DMA1_Channel7_IRQn 1 */
@@ -229,8 +233,8 @@ void DMA1_Channel7_IRQHandler(void)
 /**
   * @brief This function handles I2C1 event global interrupt / I2C1 wake-up interrupt through EXT line 23.
   */
-void I2C1_EV_IRQHandler(void)
-{
+
+//void I2C1_EV_IRQHandler(void){
   /* USER CODE BEGIN I2C1_EV_IRQn 0 */
 
   /* USER CODE END I2C1_EV_IRQn 0 */
@@ -238,7 +242,7 @@ void I2C1_EV_IRQHandler(void)
   /* USER CODE BEGIN I2C1_EV_IRQn 1 */
 
   /* USER CODE END I2C1_EV_IRQn 1 */
-}
+//}
 
 /* USER CODE BEGIN 1 */
 

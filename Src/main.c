@@ -38,6 +38,13 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+// I2C slave device useful information  // x
+#define         LSM6DS0_DEVICE_ADDRESS                0xD6U
+#define         LSM6DS0_WHO_AM_I_VALUE                0x68U			// BC
+#define         LSM6DS0_WHO_AM_I_ADDRES                0x0FU
+
+
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -75,7 +82,13 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+
+  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+
+  NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+
+  /* System interrupt init*/
 
   /* USER CODE BEGIN Init */
 
@@ -90,9 +103,9 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
+  //MX_DMA_Init();
   MX_I2C1_Init();
-  MX_USART2_UART_Init();
+  //MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -101,6 +114,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  /*   // x
+	  if(i2c_master_read(LSM6DS0_DEVICE_ADDRESS, LSM6DS0_WHO_AM_I_ADDRES) == LSM6DS0_WHO_AM_I_VALUE) {
+	      LL_GPIO_TogglePin(GPIOB, LL_GPIO_PIN_3);
+	  }*/
+	  LL_mDelay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -116,9 +134,8 @@ void SystemClock_Config(void)
 {
   LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
 
-  if(LL_FLASH_GetLatency() != LL_FLASH_LATENCY_0)
-  {
-  Error_Handler();
+  if(LL_FLASH_GetLatency() != LL_FLASH_LATENCY_0) {
+	  Error_Handler();
   }
   LL_RCC_HSI_Enable();
 
