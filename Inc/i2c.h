@@ -38,7 +38,9 @@ void MX_I2C1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 // x: uint8_t i2c_master_read_byte(uint8_t slave_address, uint8_t register_address);
-uint8_t* i2c_master_read(uint8_t*buff, uint8_t len, uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag);
+uint8_t* i2c_master_read_multi(uint8_t*buff, uint8_t len, uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag);
+uint8_t i2c_master_read_single(uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag);
+
 void i2c_master_write(uint8_t *buff, uint8_t len, uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag);
 /* USER CODE END Prototypes */
 

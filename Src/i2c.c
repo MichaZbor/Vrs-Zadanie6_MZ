@@ -24,6 +24,8 @@
 uint8_t *i2c_rx_data;
 uint8_t r_index;
 uint8_t line_ready = 1;
+uint8_t multi_read;
+uint8_t i2c_rx_byte;
 /* USER CODE END 0 */
 
 /* I2C1 init function */
@@ -91,12 +93,10 @@ void i2c_master_write(uint8_t *buff, uint8_t len, uint8_t register_addr, uint8_t
 	return;
 }
 
-
-uint8_t* i2c_master_read(uint8_t*buff, uint8_t len, uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag){
+uint8_t i2c_master_read_single(uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag){
 	if (read_flag) register_addr |= (1 << 7); 	// activate PD : hts221 pg. 22
-	r_index = 0;
-	i2c_rx_data = buff;
 	line_ready = 0;
+	multi_read = 0;
 
 	// Enable It from I2C
 	LL_I2C_EnableIT_RX(I2C1); // enable the RXNE (Receive Data Register Not Empty) interrupt (triggered when the data register contains new data that has been received and is ready to be read)
@@ -120,6 +120,42 @@ uint8_t* i2c_master_read(uint8_t*buff, uint8_t len, uint8_t register_addr, uint8
 	LL_I2C_DisableIT_RX(I2C1);
 	LL_I2C_ClearFlag_STOP(I2C1);
 	LL_I2C_ClearFlag_NACK(I2C1);
+	line_ready = 1;
+
+	return i2c_rx_byte;
+}
+
+
+uint8_t* i2c_master_read_multi(uint8_t*buff, uint8_t len, uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag){
+	if (read_flag) register_addr |= (1 << 7); 	// activate PD : hts221 pg. 22
+	r_index = 0;
+	i2c_rx_data = buff;
+	line_ready = 0;
+	multi_read = 1;
+
+	// Enable It from I2C
+	LL_I2C_EnableIT_RX(I2C1); // enable the RXNE (Receive Data Register Not Empty) interrupt (triggered when the data register contains new data that has been received and is ready to be read)
+
+	// Initialise communication
+	LL_I2C_HandleTransfer(I2C1, slave_addr, LL_I2C_ADDRSLAVE_7BIT, 1, LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_WRITE);
+	while (!LL_I2C_IsActiveFlag_STOP(I2C1)) {	// a Stop condition, which is the end of a communication sequence
+		if (LL_I2C_IsActiveFlag_TXIS(I2C1)) {	// Transmit Interrupt Status (TXIS) flag indicates that the data register is empty and ready for the next byte of data to be transmitted
+			LL_I2C_TransmitData8(I2C1, register_addr);
+		}
+	}
+	LL_I2C_ClearFlag_STOP(I2C1);	// the stop condition was processed and now it is time to liberate the flag
+
+	while (LL_I2C_IsActiveFlag_STOP(I2C1)) ;	// to ensure liberated stop flag
+
+	// Receive data from slave device and read them per interrupt handler
+	LL_I2C_HandleTransfer(I2C1, slave_addr, LL_I2C_ADDRSLAVE_7BIT, len, LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_READ);
+	while (!LL_I2C_IsActiveFlag_STOP(I2C1)) ;
+
+	//End of transfer
+	LL_I2C_DisableIT_RX(I2C1);
+	LL_I2C_ClearFlag_STOP(I2C1);
+	LL_I2C_ClearFlag_NACK(I2C1);
+	line_ready = 1;
 
 	return i2c_rx_data;
 }
@@ -128,12 +164,15 @@ uint8_t* i2c_master_read(uint8_t*buff, uint8_t len, uint8_t register_addr, uint8
 void I2C1_EV_IRQHandler(void){
     // Check RXNE flag value in ISR register
     if(LL_I2C_IsActiveFlag_RXNE(I2C1)) {
-        // Call function Master Reception Callback
-        i2c_rx_data[r_index++] = LL_I2C_ReceiveData8(I2C1);
-        //if (r_index >= I2C_MAX_BYTES_TO_READ){
-        r_index %= I2C_MAX_BYTES_TO_READ; // to prevent overflow of data
+    	if (multi_read){
+    		i2c_rx_data[r_index++] = LL_I2C_ReceiveData8(I2C1); // Call function Master Reception Callback
+    		//if (r_index >= I2C_MAX_BYTES_TO_READ){
+    		r_index %= I2C_MAX_BYTES_TO_READ; // to prevent overflow of data
         	//line_ready = 1;
-        //}
+    		//}
+    	} else {
+    		i2c_rx_byte = LL_I2C_ReceiveData8(I2C1);
+    	}
 
     }
 }
