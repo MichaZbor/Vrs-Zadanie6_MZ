@@ -26,6 +26,7 @@
 #include "gpio.h"
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -142,7 +143,8 @@ int main(void){
 }
 
 void sendToCom(float temp, float hum, float press, float altitude){
-	char tx_data[120];
+	char tx_data[64];
+	memset(tx_data, 0, 64);
 	sprintf(&(tx_data[0]), "%2.1f, %.0f, %.2f, %.2f \r\n", temp, hum, press, altitude);
 	USART2_PutBuffer((uint8_t *)tx_data, sizeof(tx_data));
 }

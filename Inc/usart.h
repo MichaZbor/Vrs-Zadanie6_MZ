@@ -32,7 +32,7 @@
 
 /* USER CODE BEGIN Private defines */
 #define DMA_USART2_BUFFER_SIZE 64
-#define USART_BAUD_RATE 38400					// 230400
+#define USART_BAUD_RATE 230400					// 230400
 
 /* USER CODE END Private defines */
 
@@ -40,7 +40,7 @@ void MX_USART2_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
-void USART2_PutBuffer(uint8_t *buffer, uint8_t length);
+void USART2_PutBuffer(uint8_t *data, uint8_t len);
 // void USART2_CheckDmaReception(void);		// to delete
 // void resetBuffer();						// to delete
 void USART2_RegisterCallback(void *callback);

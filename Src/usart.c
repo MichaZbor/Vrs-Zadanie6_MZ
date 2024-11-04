@@ -115,9 +115,9 @@ void MX_USART2_UART_Init(void)
 
 /* USER CODE BEGIN 1 */
 // Send data stored in buffer with DMA
-void USART2_PutBuffer(uint8_t *buffer, uint8_t length){
-	LL_DMA_SetMemoryAddress(DMA1, LL_DMA_CHANNEL_7, (uint32_t)buffer);
-	LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_7, length);
+void USART2_PutBuffer(uint8_t *data, uint8_t len){
+	LL_DMA_SetMemoryAddress(DMA1, LL_DMA_CHANNEL_7, (uint32_t) data);
+	LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_7, len);
 	LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_7);
 	LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_7);
 }
