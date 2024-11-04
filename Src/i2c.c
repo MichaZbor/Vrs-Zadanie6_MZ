@@ -113,7 +113,7 @@ uint8_t i2c_master_read_single(uint8_t register_addr, uint8_t slave_addr, uint8_
 	while (LL_I2C_IsActiveFlag_STOP(I2C1)) ;	// to ensure liberated stop flag
 
 	// Receive data from slave device and read them per interrupt handler
-	LL_I2C_HandleTransfer(I2C1, slave_addr, LL_I2C_ADDRSLAVE_7BIT, len, LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_READ);
+	LL_I2C_HandleTransfer(I2C1, slave_addr, LL_I2C_ADDRSLAVE_7BIT, 1, LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_READ);
 	while (!LL_I2C_IsActiveFlag_STOP(I2C1)) ;
 
 	//End of transfer
