@@ -24,7 +24,7 @@ uint8_t HTS221_read_single(uint8_t reg_addr) {
 
 void HTS221_read_multi(uint8_t reg_addr, uint8_t* data, uint8_t len) {
 	if (i2c_mread_multi) return;
-    i2c_master_read_multi(data, len, reg_addr, HTS221_addr, 1);
+    i2c_master_read_multi(data, len, reg_addr | 0x80, HTS221_addr, 1);
 }
 
 void HTS221_write_single(uint8_t reg_addr, uint8_t data) {
@@ -33,13 +33,11 @@ void HTS221_write_single(uint8_t reg_addr, uint8_t data) {
 }
 
 void HTS221_write_multi(uint8_t reg_addr, uint8_t* data, uint8_t len) {
-	i2c_mwrite(data, len, reg_addr, HTS221_addr, 0);
+	i2c_mwrite(data, len, reg_addr, HTS221_addr | 0x80, 0);
 }
 
 void HTS221_init(void) {
-    uint8_t whoAmI;
-
-    whoAmI = HTS221_read_single(HTS221_WHO_AM_I_ADDRESS);
+    uint8_t whoAmI = HTS221_read_single(HTS221_WHO_AM_I_ADDRESS);
 
     if (!(whoAmI == HTS221_WHO_AM_I_VALUE)) {
     	HTS221_addr = HTS221_DEVICE_ADDRESS_READ;
