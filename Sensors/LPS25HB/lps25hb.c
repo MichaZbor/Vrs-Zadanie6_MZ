@@ -60,7 +60,7 @@ void LPS25HB_get_pressure_calib(void){
 	uint8_t p_out_data[2];
 
 	LPS25HB_read_multi(LPS25HB_RPDS_L, p_out_data, 2);
-	LPS25HB_PressureOffset = (int16_t)(((uint16_t)p_out_data[1]) << 8 | ((uint16_t)p_out_data[0]));
+	LPS25HB_PressureOffset = (int16_t)((uint16_t)p_out_data[1] << 8 | (uint16_t)p_out_data[0]);
 	return;
 }
 
@@ -68,7 +68,8 @@ void LPS25HB_get_pressure(float* pressure_out) {
     uint8_t p_out_data[3];
 
     LPS25HB_read_multi(LPS25HB_PRESSURE_OUT_XL, p_out_data, 3);
-    uint32_t p_out = ((((uint32_t)p_out_data[1]) << 16) | (((uint32_t)p_out_data[1]) << 8) | ((uint32_t)p_out_data[0]));
+    uint32_t p_out = ((uint32_t)p_out_data[2] << 16) | ((uint32_t)p_out_data[1] << 8) | (uint32_t)p_out_data[0];
+
 
     // Calculate the actual pressure value
     *pressure_out = (p_out / 4096.0f) + LPS25HB_PressureOffset;

@@ -55,24 +55,24 @@ void HTS221_init(void) {
 }
 
 void HTS221_get_humidity_calib(void) {
-    uint8_t calibration_data[2]; 	// rH -> H0 & H1
+    uint8_t rh_H0_H1[2]; 	// rH -> H0 & H1
     uint8_t H0_T0_Out_data[2], H1_T0_Out_data[2];  // T0_OUT -> H0 & H1
-    int16_t H0_T0_Out, H1_T0_Out;
+    int16_t H0_Raw, H1_Raw;
 
-    HTS221_read_multi(HTS221_CALIB_H0_rH_x2, calibration_data, 2);
+    HTS221_read_multi(HTS221_CALIB_H0_rH_x2, rh_H0_H1, 2);
 
-    uint8_t H0_rH = calibration_data[0] >> 1; // H0_rH is stored as (value / 2)
-    uint8_t H1_rH = calibration_data[1] >> 1; // H1_rH is stored as (value / 2)
+    uint8_t H0_rH = rh_H0_H1[0] >> 1; // H0_rH is stored as (value / 2)
+    uint8_t H1_rH = rh_H0_H1[1] >> 1; // H1_rH is stored as (value / 2)
 
-    HTS221_read_multi(HTS221_CALIB_H0_T0_OUT_H, H0_T0_Out_data, 2);
-    HTS221_read_multi(HTS221_CALIB_H0_T0_OUT_L, H1_T0_Out_data, 2);
+    HTS221_read_multi(HTS221_CALIB_H0_T0_OUT_L, H0_T0_Out_data, 2);
+    HTS221_read_multi(HTS221_CALIB_H1_T0_OUT_L, H1_T0_Out_data, 2);
 
-    H0_T0_Out = (int16_t)((uint16_t)H0_T0_Out_data[1] << 8 | (uint16_t)H0_T0_Out_data[0]);
-    H1_T0_Out = (int16_t)((uint16_t)H1_T0_Out_data[1] << 8 | (uint16_t)H1_T0_Out_data[0]);
+    H0_Raw = (int16_t)((uint16_t)H0_T0_Out_data[1] << 8 | (uint16_t)H0_T0_Out_data[0]);
+    H1_Raw = (int16_t)((uint16_t)H1_T0_Out_data[1] << 8 | (uint16_t)H1_T0_Out_data[0]);
 
     // Humidity calibration coefficient K and shift
-    HTS221_HumidityK = (float)(H1_rH - H0_rH) / (H1_T0_Out - H0_T0_Out);
-    HTS221_HumidityShift = H0_rH - HTS221_HumidityK * H0_T0_Out;
+    HTS221_HumidityK = (float)(H1_rH - H0_rH) / (H1_Raw - H0_Raw);
+    HTS221_HumidityShift = (float)H0_rH - (float)HTS221_HumidityK * H0_Raw;
     return;
 }
 
@@ -83,11 +83,9 @@ void HTS221_get_humidity(float* humidity_out) {
     HTS221_read_multi(HTS221_HUMIDITY_OUT_L, H_Out_data, 2);
     H_Out = H_Out_data[0] | (H_Out_data[1] << 8);
 
-    *humidity_out = (H_Out * HTS221_HumidityK + HTS221_HumidityShift);
+    *humidity_out = ((float)H_Out * HTS221_HumidityK + HTS221_HumidityShift);
     return;
 }
-
-
 
 
 void HTS221_get_temperature_calib(void) {
@@ -97,11 +95,13 @@ void HTS221_get_temperature_calib(void) {
 
     uint8_t t1t0_msb = HTS221_read_single(HTS221_CALIB_T1_T0_MSB);
 
-    uint16_t t0_degC = (((uint16_t)(t1t0_msb & 0x03) << 8) | (uint16_t)(HTS221_read_single(HTS221_CALIB_T0_degC_x8)));
-    uint16_t t1_degC = (((uint16_t)(t1t0_msb & 0x0C) << 8) | (uint16_t)(HTS221_read_single(HTS221_CALIB_T1_degC_x8)));
+    uint16_t t0_degCx8 = (((uint16_t)(t1t0_msb & 0x03) << 8) | (uint16_t)(HTS221_read_single(HTS221_CALIB_T0_degC_x8)));
+    uint16_t t1_degCx8 = (((uint16_t)((t1t0_msb & 0x0C) >> 2) << 8) | (uint16_t)(HTS221_read_single(HTS221_CALIB_T1_degC_x8)));
 
-    //int16_t t0_out = (int16_t)(((uint16_t)(HTS221_read_single(HTS221_CALIB_T0_OUT_L))) | (((unt16_t)(HTS221_read_single(HTS221_CALIB_T0_OUT_H))) << 8));
-    //int16_t t1_out = (int16_t)(((uint16_t)(HTS221_read_single(HTS221_CALIB_T1_OUT_L))) | (((unt16_t)(HTS221_read_single(HTS221_CALIB_T1_OUT_H))) << 8));
+
+    float t0_degC = t0_degCx8 / 8.0f;
+    float t1_degC = t1_degCx8 / 8.0f;
+
     HTS221_read_multi(HTS221_CALIB_T0_OUT_L, t0_out_data, 2);
     t0_out = (int16_t)(((uint16_t)t0_out_data[1]) << 8 | ((uint16_t)t0_out_data[0]));
 
@@ -109,8 +109,8 @@ void HTS221_get_temperature_calib(void) {
     t1_out = (int16_t)(((uint16_t)t1_out_data[1]) << 8 | ((uint16_t)t1_out_data[0]));
 
     // Calculate the temperature calibration coefficient K and shift
-    HTS221_TemperatureK = (t1_degC - t0_degC) / (8.0 * (t1_out - t0_out));
-    HTS221_TemperatureShift = (t0_degC / 8.0) - HTS221_TemperatureK * t0_out;
+    HTS221_TemperatureK = (float)(t1_degC - t0_degC) / (t1_out - t0_out);
+    HTS221_TemperatureShift = t0_degC - HTS221_TemperatureK * t0_out;
     return;
 }
 
@@ -122,6 +122,6 @@ void HTS221_get_temperature(float* temperature_out) {
     HTS221_read_multi(HTS221_TEMP_OUT_L, t_out_data, 2);
     t_out = (int16_t)(((uint16_t)t_out_data[1]) << 8 | ((uint16_t)t_out_data[0]));
 
-    *temperature_out = (t_out * (-HTS221_TemperatureK)) + HTS221_TemperatureShift;
+    *temperature_out = ((float)t_out * HTS221_TemperatureK) + HTS221_TemperatureShift;
     return;
 }
