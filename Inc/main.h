@@ -86,7 +86,7 @@ void Error_Handler(void);
                                                                  0 bit  for subpriority */
 #endif
 /* USER CODE BEGIN Private defines */
-
+void sendToCom(float temp, float hum, float press, float altitude);
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

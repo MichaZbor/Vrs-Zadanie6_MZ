@@ -38,9 +38,9 @@
 #define 	HTS221_CALIB_T1_OUT_L			0x3E
 #define		HTS221_CALIB_T1_OUT_H			0x3F
 
-static uint8_t (* i2c_mread_single)(uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag) = 0;
-static void (* i2c_mread_multi)(uint8_t*buff, uint8_t len, uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag) = 0;
-static void (* i2c_mwrite)(uint8_t *buff, uint8_t len, uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag) = 0;
+static uint8_t (* HTS221_i2c_mread_single)(uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag) = 0;
+static void (* HTS221_i2c_mread_multi)(uint8_t*buff, uint8_t len, uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag) = 0;
+static void (* HTS221_i2c_mwrite)(uint8_t *buff, uint8_t len, uint8_t register_addr, uint8_t slave_addr, uint8_t read_flag) = 0;
 
 void HTS221_RegisterCallback_i2c_mread_single(void *callback);
 void HTS221_RegisterCallback_i2c_mread_multi(void *callback);

@@ -24,10 +24,13 @@
 #include "i2c.h"
 #include "usart.h"
 #include "gpio.h"
+#include <stdio.h>
+#include <math.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "hts221.h"
+#include "lps25hb.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,13 +40,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
-// I2C slave device useful information  // x
-#define         LSM6DS0_DEVICE_ADDRESS                0xD6U
-#define         LSM6DS0_WHO_AM_I_VALUE                0x68U			// BC
-#define         LSM6DS0_WHO_AM_I_ADDRES                0x0FU
-
-
 
 /* USER CODE END PD */
 
@@ -73,8 +69,7 @@ void SystemClock_Config(void);
   * @brief  The application entry point.
   * @retval int
   */
-int main(void)
-{
+int main(void){
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -103,27 +98,53 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  //MX_DMA_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
-  //MX_USART2_UART_Init();
+  MX_USART2_UART_Init();
+
+  HTS221_RegisterCallback_i2c_mread_single(i2c_master_read_single);
+  HTS221_RegisterCallback_i2c_mread_multi(i2c_master_read_multi);
+  HTS221_RegisterCallback_i2c_mwrite(i2c_master_write);
+
+  LPS25HB_RegisterCallback_i2c_mread_single(i2c_master_read_single);
+  LPS25HB_RegisterCallback_i2c_mread_multi(i2c_master_read_multi);
+  LPS25HB_RegisterCallback_i2c_mwrite(i2c_master_write);
+
+  HTS221_init();
+  LPS25HB_init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-	  /*   // x
-	  if(i2c_master_read(LSM6DS0_DEVICE_ADDRESS, LSM6DS0_WHO_AM_I_ADDRES) == LSM6DS0_WHO_AM_I_VALUE) {
-	      LL_GPIO_TogglePin(GPIOB, LL_GPIO_PIN_3);
-	  }*/
-	  LL_mDelay(100);
-    /* USER CODE END WHILE */
+  float temperature;
+  float humidity;
+  float pressure;
+  float ref_pressure;
+  float temp_lapse_rate = 0.0065;
+  float R_gas_const = 8.3144598;
+  float g_gravity = 9.80665;
+  float air_molar_mass = 0.0289644;
+  LPS25HB_get_pressure(&ref_pressure);
+  LL_mDelay(10);
 
-    /* USER CODE BEGIN 3 */
+
+  while (1) {
+	  HTS221_get_temperature(&temperature);
+	  HTS221_get_humidity(&humidity);
+	  LPS25HB_get_pressure(&pressure);
+	  float altitude = (float)(temperature/temp_lapse_rate) * (1-pow(pressure/ref_pressure,R_gas_const*temp_lapse_rate/(g_gravity*air_molar_mass)));
+	  sendToCom(temperature, humidity, pressure, altitude);
+   	  LL_mDelay(500);
   }
   /* USER CODE END 3 */
+}
+
+void sendToCom(float temp, float hum, float press, float altitude){
+	char tx_data[120];
+	sprintf(&(tx_data[0]), "%2.1f, %.0f, %.2f, %.2f \r\n", temp, hum, press, altitude);
+	USART2_PutBuffer((uint8_t *)tx_data, sizeof(tx_data));
 }
 
 /**

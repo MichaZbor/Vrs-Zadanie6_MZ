@@ -8,32 +8,33 @@ float HTS221_TemperatureShift;
 uint8_t HTS221_addr = HTS221_DEVICE_ADDRESS_WRITE;
 
 void HTS221_RegisterCallback_i2c_mread_single(void *callback){
-        if(callback != 0) i2c_mread_single = callback;
+        if(callback != 0) HTS221_i2c_mread_single = callback;
 }
 void HTS221_RegisterCallback_i2c_mread_multi(void *callback){
-        if(callback != 0) i2c_mread_multi = callback;
+        if(callback != 0) HTS221_i2c_mread_multi = callback;
 }
 void HTS221_RegisterCallback_i2c_mwrite(void *callback){
-        if(callback != 0) i2c_mwrite = callback;
+        if(callback != 0) HTS221_i2c_mwrite = callback;
 }
 
 uint8_t HTS221_read_single(uint8_t reg_addr) {
-	if (i2c_mread_single) return 0;
-    return i2c_mread_single(reg_addr, HTS221_addr, 1);
+	if (HTS221_i2c_mread_single == 0) return 0;
+    return HTS221_i2c_mread_single(reg_addr, HTS221_addr, 1);
 }
 
 void HTS221_read_multi(uint8_t reg_addr, uint8_t* data, uint8_t len) {
-	if (i2c_mread_multi) return;
-    i2c_master_read_multi(data, len, reg_addr | 0x80, HTS221_addr, 1);
+	if (HTS221_i2c_mread_multi == 0) return;
+	HTS221_i2c_mread_multi(data, len, reg_addr | 0x80, HTS221_addr, 1);
 }
 
 void HTS221_write_single(uint8_t reg_addr, uint8_t data) {
-	if (i2c_mwrite) return;
-	i2c_mwrite(&data, 1, reg_addr, HTS221_addr, 0);
+	if (HTS221_i2c_mwrite == 0) return;
+	HTS221_i2c_mwrite(&data, 1, reg_addr, HTS221_addr, 0);
 }
 
 void HTS221_write_multi(uint8_t reg_addr, uint8_t* data, uint8_t len) {
-	i2c_mwrite(data, len, reg_addr, HTS221_addr | 0x80, 0);
+	if (HTS221_i2c_mwrite == 0) return;
+	HTS221_i2c_mwrite(data, len, reg_addr, HTS221_addr | 0x80, 0);
 }
 
 void HTS221_init(void) {
@@ -50,9 +51,10 @@ void HTS221_init(void) {
 
     HTS221_get_humidity_calib();
     HTS221_get_temperature_calib();
+    return;
 }
 
-void HTS221_get_humidity_calibration(void) {
+void HTS221_get_humidity_calib(void) {
     uint8_t calibration_data[2]; 	// rH -> H0 & H1
     uint8_t H0_T0_Out_data[2], H1_T0_Out_data[2];  // T0_OUT -> H0 & H1
     int16_t H0_T0_Out, H1_T0_Out;
@@ -71,6 +73,7 @@ void HTS221_get_humidity_calibration(void) {
     // Humidity calibration coefficient K and shift
     HTS221_HumidityK = (float)(H1_rH - H0_rH) / (H1_T0_Out - H0_T0_Out);
     HTS221_HumidityShift = H0_rH - HTS221_HumidityK * H0_T0_Out;
+    return;
 }
 
 void HTS221_get_humidity(float* humidity_out) {
@@ -81,12 +84,13 @@ void HTS221_get_humidity(float* humidity_out) {
     H_Out = H_Out_data[0] | (H_Out_data[1] << 8);
 
     *humidity_out = (H_Out * HTS221_HumidityK + HTS221_HumidityShift);
+    return;
 }
 
 
 
 
-void HTS221_get_temperature_calibration(void) {
+void HTS221_get_temperature_calib(void) {
     uint8_t t0_out_data[2];
     uint8_t t1_out_data[2];
     int16_t t0_out, t1_out;
@@ -107,6 +111,7 @@ void HTS221_get_temperature_calibration(void) {
     // Calculate the temperature calibration coefficient K and shift
     HTS221_TemperatureK = (t1_degC - t0_degC) / (8.0 * (t1_out - t0_out));
     HTS221_TemperatureShift = (t0_degC / 8.0) - HTS221_TemperatureK * t0_out;
+    return;
 }
 
 
@@ -118,4 +123,5 @@ void HTS221_get_temperature(float* temperature_out) {
     t_out = (int16_t)(((uint16_t)t_out_data[1]) << 8 | ((uint16_t)t_out_data[0]));
 
     *temperature_out = (t_out * (-HTS221_TemperatureK)) + HTS221_TemperatureShift;
+    return;
 }
